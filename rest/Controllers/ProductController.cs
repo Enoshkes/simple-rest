@@ -1,29 +1,29 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using rest.Models;
+using rest.Service;
 
 namespace rest.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductController : Controller
+    public class ProductController(IProductService productService) : Controller
     {
-        private static readonly List<Product> _products = [
-            new () { Name = "Laptop", Price = 1999.9, Id = 1},
-            new () { Name = "IPhone", Price = 3000.99, Id = 2},
-            new () { Name = "Headphones", Price = 299.90, Id = 3},
-        ];
+        private readonly IProductService _productService = productService;
+
+        [HttpGet("Seed")]
+        public IActionResult Seed()
+        {
+            _productService.Seed();
+            return Ok();
+        }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Product>> GetProducts(
+        public async Task<ActionResult<IEnumerable<Product>>> GetProducts(
             [FromQuery] double? minPrice,
             [FromQuery] double? maxPrice
         )
         {
-            var filteredProducts = _products
-                .Where(p => 
-                    (!minPrice.HasValue || p.Price >= minPrice.Value) &&
-                    (!maxPrice.HasValue || p.Price <= maxPrice.Value))
-                .ToList();
+            var filteredProducts = await _productService.GetInRangeAsync(minPrice, maxPrice);
 
             var response = new
             {

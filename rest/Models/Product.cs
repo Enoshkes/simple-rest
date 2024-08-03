@@ -9,7 +9,7 @@ namespace rest.Models
         [Required]
         [StringLength(100)]
         public required string Name { get; set; }
-
+        [Required]
         public required double Price { get; set; }
     }
 }

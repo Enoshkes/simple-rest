@@ -1,4 +1,7 @@
 
+using rest.Data;
+using rest.Service;
+
 namespace rest
 {
     public class Program
@@ -13,6 +16,9 @@ namespace rest
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddDbContext<ApplicationDbContext>();
+            builder.Services.AddScoped<IBookService, BookService>();
+            builder.Services.AddScoped<IProductService, ProductService>();  
 
             var app = builder.Build();
 

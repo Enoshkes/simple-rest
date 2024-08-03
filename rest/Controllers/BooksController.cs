@@ -1,53 +1,66 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using rest.Models;
+using rest.Service;
 
 namespace rest.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class BooksController : ControllerBase
+    public class BooksController(IBookService bookService) : ControllerBase
     {
-        private static readonly List<Book> _books = [
-            new () { Title = "1948", ISBN = "horror", Id = 1 },
-            new () { Title = "Harry Potter", ISBN = "SCIFI" , Id = 2 },
-            new () { Title = "Someone to run with", ISBN = "children", Id = 3 },
-        ];
+        private readonly IBookService _bookService = bookService;
+
+        [HttpGet("Seed")]
+        public ActionResult Seed()
+        {
+            _bookService.Seed();
+            return Ok();
+        }
 
         [HttpGet]
-        public ActionResult<List<Book>> GetAll() => Ok(_books);
+        public async Task<ActionResult<List<Book>>> GetAll() => 
+            Ok(await _bookService.GetBooksAsync());
 
         [HttpGet("{id}")]
-        public ActionResult<Book> Get(int id)
+        public async Task<ActionResult<Book>> Get(int id)
         {
-            var book = _books.FirstOrDefault(x => x.Id == id);
+            var book = await _bookService.GetBookByIdAsync(id);
             return book == null ? NotFound() : Ok(book);
         }
 
         [HttpPost]
-        public ActionResult<Book> Create([FromBody] Book book)
-        {
-            book.Id = _books.Max(x => x.Id) + 1;
-            _books.Add(book);
-            return CreatedAtAction(nameof(Get), new { id =  book.Id }, book);
+        public async Task<ActionResult<Book>> Create([FromBody] Book book)
+        {   
+            var addedBook = await _bookService.CreateBookAsync(book);
+            return CreatedAtAction(nameof(Get), new { id =  addedBook.Id }, addedBook);
         }
 
         [HttpPut("{id}")]
-        public ActionResult<Book> Update(int id, [FromBody] Book book)
+        public async Task<ActionResult<Book>> Update(int id, [FromBody] Book book)
         {
-            var bookToUpdate = _books.FirstOrDefault(x => x.Id == id);
-            if (bookToUpdate== null) { return NotFound(); }
-            bookToUpdate.Title = book.Title;
-            bookToUpdate.ISBN = book.ISBN;
-            return Ok(bookToUpdate);
+            try
+            {
+                var updated = await _bookService.UpdateBookAsync(id, book);
+                return Ok(updated);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{id}")]
-        public ActionResult Delete(int id)
+        public async Task<ActionResult> Delete(int id)
         {
-            var bookToDelete = _books.FirstOrDefault(x =>x.Id == id);
-            if (bookToDelete== null) {  return  NotFound(); }
-            _books.Remove(bookToDelete);
-            return Ok(bookToDelete);
+            try
+            {
+                var deletedBook = await _bookService.DeleteBookAsync(id);
+                return Ok(deletedBook);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }
